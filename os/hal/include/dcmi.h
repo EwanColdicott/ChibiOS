@@ -123,42 +123,6 @@ typedef enum {
 }
 
 /**
- * @brief   Receives data from the DCMI bus.
- * @details This asynchronous function starts a receive operation.
- * @pre     A slave must have been selected using @p dcmiSelect() or
- *          @p dcmiSelectI().
- * @post    At the end of the operation the configured callback is invoked.
- * @note    The buffers are organized as uint8_t arrays for data sizes below
- *          or equal to 8 bits else it is organized as uint16_t arrays.
- *
- * @param[in] dcmip      pointer to the @p DCMIDriver object
- * @param[in] n         number of words to receive
- * @param[out] rxbuf    the pointer to the receive buffer
- *
- * @iclass
- */
-#define dcmiStartReceiveI(dcmip, n, rxbuf) {                                  \
-  (dcmip)->state = DCMI_ACTIVE;                                               \
-  dcmi_lld_receive(dcmip, n, rxbuf);                                          \
-}
-
-/**
- * @brief   Exchanges one frame using a polled wait.
- * @details This synchronous function exchanges one frame using a polled
- *          synchronization method. This function is useful when exchanging
- *          small amount of data on high speed channels, usually in this
- *          situation is much more efficient just wait for completion using
- *          polling than suspending the thread waiting for an interrupt.
- * @note    This API is implemented as a macro in order to minimize latency.
- *
- * @param[in] dcmip      pointer to the @p DCMIDriver object
- * @param[in] frame     the data frame to send over the DCMI bus
- * @return              The received data frame from the DCMI bus.
- */
-#define dcmiPolledExchange(dcmip, frame) dcmi_lld_polled_exchange(dcmip, frame)
-/** @} */
-
-/**
  * @name    Low Level driver helper macros
  * @{
  */
@@ -204,7 +168,7 @@ typedef enum {
 #endif /* !DCMI_USE_WAIT */
 
 /**
- * @brief   Common ISR code.
+ * @brief   Common ISR code. TODO
  * @details This code handles the portable part of the ISR code:
  *          - Callback invocation.
  *          - Waiting thread wakeup, if any.
@@ -241,23 +205,17 @@ extern "C" {
   void dcmiObjectInit(DCMIDriver *dcmip);
   void dcmiStart(DCMIDriver *dcmip, const DCMIConfig *config);
   void dcmiStop(DCMIDriver *dcmip);
-  void dcmiSelect(DCMIDriver *dcmip);
-  void dcmiUnselect(DCMIDriver *dcmip);
-  void dcmiStartIgnore(DCMIDriver *dcmip, size_t n);
-  void dcmiStartExchange(DCMIDriver *dcmip, size_t n,
-                        const void *txbuf, void *rxbuf);
-  void dcmiStartSend(DCMIDriver *dcmip, size_t n, const void *txbuf);
-  void dcmiStartReceive(DCMIDriver *dcmip, size_t n, void *rxbuf);
+  void dcmiStartReceive(DCMIDriver *dcmip, size_t n,
+                        const void *rxbuf0, void *rxbuf1);
+  void dcmiStartReceiveOneShot(DCMIDriver *dcmip, size_t n,
+                        const void *rxbuf0, const void *rxbuf1);
 #if DCMI_USE_WAIT
-  void dcmiIgnore(DCMIDriver *dcmip, size_t n);
-  void dcmiExchange(DCMIDriver *dcmip, size_t n, const void *txbuf, void *rxbuf);
-  void dcmiSend(DCMIDriver *dcmip, size_t n, const void *txbuf);
-  void dcmiReceive(DCMIDriver *dcmip, size_t n, void *rxbuf);
+  void dcmiReceive(DCMIDriver *dcmip, size_t n,
+                   const void *rxbuf0, const void *rxbuf1);
+  void dcmiReceiveOneShot(DCMIDriver *dcmip, size_t n,
+                   const void *rxbuf0, const void *rxbuf1);
 #endif /* DCMI_USE_WAIT */
-#if DCMI_USE_MUTUAL_EXCLUSION
-  void dcmiAcquireBus(DCMIDriver *dcmip);
-  void dcmiReleaseBus(DCMIDriver *dcmip);
-#endif /* DCMI_USE_MUTUAL_EXCLUSION */
+
 #ifdef __cplusplus
 }
 #endif
