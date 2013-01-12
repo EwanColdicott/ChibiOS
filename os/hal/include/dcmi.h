@@ -64,8 +64,7 @@ typedef enum {
   DCMI_READY = 2,                    /**< Ready to begin listening.          */
   DCMI_LISTEN = 3,                   /**< Listening for frames, continuous   */
   DCMI_LISTEN_ONCE = 4,              /**< Listening for frames, one shot     */
-  DCMI_ACTIVE = 5,                   /**< Receiving frame, continuous        */
-  DCMI_ACTIVE_ONCE = 6               /**< Receiving frame, one shot          */
+  DCMI_COMPLETE = 5                  /**< Frame complete, callback pending   */
 } dcmistate_t;
 
 #include "dcmi_lld.h"
@@ -79,34 +78,34 @@ typedef enum {
  * @{
  */
 /**
- * @brief   Receives a frame on the DCMI.
+ * @brief   Begins reception of frames on the DCMI.
  * @details This asynchronous function starts a receive operation.
  * @post    Upon either of the two buffers being filled, the configured callback
- *          (dcmiTransferComplete_cb) is invoked.
- *          At the end of the operation the configured callback 
- *          (dcmiFrameComplete_cb) is invoked.
- * @note    The buffers are organized as uint8_t arrays for data sizes below
- *          or equal to 8 bits else it is organized as uint16_t arrays.
+ *          (transfer_complete_cb) is invoked.
+ *          At the end of each frame the configured callback 
+ *          (frame_end_cb) is invoked.
+ * @note    The buffers are organized as uint8_t arrays for data sizes equal to 
+ *          8 bits else it is organized as uint16_t arrays.
  *
  * @param[in] dcmip     pointer to the @p DCMIDriver object
  * @param[in] n         Size of each receive buffer, in DCMI words.
- * @param[in] rxbuf0    the pointer to the first receive buffer
+ * @param[out] rxbuf0   the pointer to the first receive buffer
  * @param[out] rxbuf1   the pointer to the second receive buffer
  *
  * @iclass
  */
 #define dcmiStartReceiveI(dcmip, n, rxbuf0, rxbuf1) {                         \
   (dcmip)->state = DCMI_LISTEN;                                               \
-  dcmi_lld_receive(dcmip, n, rxbuf0, rxbuf1);                                 \
+  dcmi_lld_receive(dcmip, n, FALSE, rxbuf0, rxbuf1);                          \
 }
 
 /**
  * @brief   Receives a single frame over the DCMI
  * @details This asynchronous function starts a single shot receive operation.
  * @post    Upon either of the two buffers being filled, the configured callback
- *          (dcmiTransferComplete_cb) is invoked.
+ *          (transfer_complete_cb) is invoked.
  *          At the end of the operation the configured callback
- *          (dcmiFrameComplete_cb) is invoked.
+ *          (frame_end_cb) is invoked.
  * @note    The buffers are organized as uint8_t arrays for data sizes below
  *          or equal to 8 bits else it is organized as uint16_t arrays.
  *
@@ -119,7 +118,7 @@ typedef enum {
  */
 #define dcmiStartReceiveOneShotI(dcmip, n, rxbuf0, rxbuf1) {                  \
   (dcmip)->state = DCMI_LISTEN_ONCE;                                          \
-  dcmi_lld_receive(dcmip, n, rxbuf0, rxbuf1);                                 \
+  dcmi_lld_receive(dcmip, n, TRUE, rxbuf0, rxbuf1);                                 \
 }
 
 /**
@@ -156,7 +155,7 @@ typedef enum {
 #define _dcmi_wakeup_isr(dcmip) {                                             \
   if ((dcmip)->thread != NULL) {                                             \
     Thread *tp = (dcmip)->thread;                                            \
-    (dcmip)->thread = NULL;                                                  \
+    (dcmip)->thread = NULL;                                                 \
     chSysLockFromIsr();                                                     \
     chSchReadyI(tp);                                                        \
     chSysUnlockFromIsr();                                                   \
@@ -168,7 +167,7 @@ typedef enum {
 #endif /* !DCMI_USE_WAIT */
 
 /**
- * @brief   Common ISR code. TODO
+ * @brief   Common DCMI Frame Complete ISR code
  * @details This code handles the portable part of the ISR code:
  *          - Callback invocation.
  *          - Waiting thread wakeup, if any.
@@ -182,14 +181,16 @@ typedef enum {
  * @notapi
  */
 #define _dcmi_isr_code(dcmip) {                                               \
-  if ((dcmip)->config->end_cb) {                                             \
+  bool_t oneShot = ((dcmip)->state == DCMI_LISTEN_ONCE);                      \
+  if ((dcmip)->config->frame_end_cb != NULL) {                                \
     (dcmip)->state = DCMI_COMPLETE;                                           \
-    (dcmip)->config->end_cb(dcmip);                                           \
+    (dcmip)->config->frame_end_cb(dcmip);                                     \
     if ((dcmip)->state == DCMI_COMPLETE)                                      \
-      (dcmip)->state = DCMI_READY;                                            \
-  }                                                                         \
-  else                                                                      \
-    (dcmip)->state = DCMI_READY;                                              \
+      (dcmip)->state = oneShot ? DCMI_READY : DCMI_LISTEN;                    \
+  }                                                                           \
+  else {                                                                      \
+    (dcmip)->state = oneShot ? DCMI_READY : DCMI_LISTEN;                      \
+  }                                                                           \
   _dcmi_wakeup_isr(dcmip);                                                    \
 }
 /** @} */
@@ -206,14 +207,12 @@ extern "C" {
   void dcmiStart(DCMIDriver *dcmip, const DCMIConfig *config);
   void dcmiStop(DCMIDriver *dcmip);
   void dcmiStartReceive(DCMIDriver *dcmip, size_t n,
-                        const void *rxbuf0, void *rxbuf1);
+                        void* rxbuf0, void* rxbuf1);
   void dcmiStartReceiveOneShot(DCMIDriver *dcmip, size_t n,
-                        const void *rxbuf0, const void *rxbuf1);
+                        void* rxbuf0, void* rxbuf1);
 #if DCMI_USE_WAIT
-  void dcmiReceive(DCMIDriver *dcmip, size_t n,
-                   const void *rxbuf0, const void *rxbuf1);
   void dcmiReceiveOneShot(DCMIDriver *dcmip, size_t n,
-                   const void *rxbuf0, const void *rxbuf1);
+                        void* rxbuf0, void* rxbuf1);
 #endif /* DCMI_USE_WAIT */
 
 #ifdef __cplusplus
