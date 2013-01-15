@@ -42,10 +42,26 @@ const uint32_t BPP        = 2;       //bytes per pixel
 const uint32_t IMG_SIZE = IMG_HEIGHT*IMG_WIDTH*BPP;
 
 uint8_t imgBuf[IMG_SIZE];
+uint8_t* imgBuf0 = imgBuf;
+uint8_t* imgBuf1 = &imgBuf[IMG_SIZE/2];
+
+EventSource es1, es2;
+EventListener el1, el2;
+
+
+void frameEndCb(DCMIDriver* dcmip) {
+   (void) dcmip;
+   chEvtBroadcastI(&es2);
+}
+
+void dmaTxferEndCb(DCMIDriver* dcmip) {
+   (void) dcmip;
+   chEvtBroadcastI(&es1);
+}
 
 static const DCMIConfig dcmicfg = {
-   NULL,	//no Frame End callback
-   NULL,	//no DMA transfer complete callback,
+   frameEndCb,
+   dmaTxferEndCb,
    0            //empty cr
 };
 
@@ -86,13 +102,21 @@ static WORKING_AREA(waThread4, 2048);
 static msg_t Thread4(void *arg) {
   (void) arg;
   chRegSetThreadName("encoder-transmitter");
+  chEvtRegister(&es1, &el1, 1);
+  chEvtRegister(&es2, &el2, 2);
   while(TRUE) {
-    chThdSleepMilliseconds(5000);
-    chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:");
+    chThdSleepMilliseconds(1000);
+    chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:\n\r");
     //using synchronous API for simplicity, single buffer.
     //limits max image size to available SRAM. Note that max DMA transfers in one go is 65535.
     // i.e. IMG_SIZE cannot be larger than 65535 here.
-    dcmiReceiveOneShot(&DCMID1, IMG_SIZE, imgBuf, NULL);
+    dcmiStartReceiveOneShot(&DCMID1, IMG_SIZE/2, imgBuf0, imgBuf1);
+    chEvtWaitOne(EVENT_MASK(1));
+    chprintf((BaseSequentialStream*)&SD3, "Got first DMA interrupt\n\r");
+    chEvtWaitOne(EVENT_MASK(1));
+    chprintf((BaseSequentialStream*)&SD3, "Got second DMA interrupt, waiting for DCMI\n\r");
+    chEvtWaitOne(EVENT_MASK(2));
+    chprintf((BaseSequentialStream*)&SD3, "Got DCMI interrupt, printing BMP\n\r");
     palSetPad(GPIOA, GPIOA_LED2);
     send16bppBmpImage( (BaseSequentialStream*)&SD3, (uint16_t*)imgBuf, IMG_WIDTH, IMG_HEIGHT );
     palClearPad(GPIOA, GPIOA_LED2);
@@ -114,6 +138,9 @@ int main(void) {
    */
   halInit();
   chSysInit();
+
+  chEvtInit(&es1);
+  chEvtInit(&es2);
 
   /* Activates the serial driver 3 using the config structure defined above.
    * PC10(TX) and PC11(RX) are routed to USART3 in board.h */

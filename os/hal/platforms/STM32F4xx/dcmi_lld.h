@@ -56,6 +56,7 @@
 #define STM32_DCMI_IER_VSYNC_IE DCMI_IER_VSYNC_IE
 #define STM32_DCMI_IER_LINE_IE  DCMI_IER_LINE_IE
 
+#define STM32_DCMI_ICR_FRAME_ISC DCMI_ICR_FRAME_ISC
 
 /*===========================================================================*/
 /* Driver pre-compile time settings.                                         */
@@ -75,10 +76,17 @@
 #endif
 
 /**
- * @brief   DCMI1 interrupt priority level setting.
+ * @brief   DCMI1 DCMI interrupt priority level setting.
  */
-#if !defined(STM32_DCMI_DCMI1_IRQ_PRIORITY) || defined(__DOXYGEN__)
-#define STM32_DCMI_DCMI1_IRQ_PRIORITY         10
+#if !defined(STM32_DCMI_DCMI1_DCMI_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DCMI_DCMI1_DCMI_IRQ_PRIORITY         11
+#endif
+
+/**
+ * @brief   DCMI1 DMA interrupt priority level setting.
+ */
+#if !defined(STM32_DCMI_DCMI1_DMA_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_DCMI_DCMI1_DMA_IRQ_PRIORITY         10
 #endif
 
 /**
@@ -122,8 +130,13 @@
 #endif
 
 #if STM32_DCMI_USE_DCMI1 &&                                                   \
-   !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_DCMI_DCMI1_IRQ_PRIORITY)
-#error "Invalid IRQ priority assigned to DCMI1"
+   !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_DCMI_DCMI1_DCMI_IRQ_PRIORITY)
+#error "Invalid DCMI IRQ priority assigned to DCMI1"
+#endif
+
+#if STM32_DCMI_USE_DCMI1 &&                                                   \
+   !CORTEX_IS_VALID_KERNEL_PRIORITY(STM32_DCMI_DCMI1_DMA_IRQ_PRIORITY)
+#error "Invalid DMA IRQ priority assigned to DCMI1"
 #endif
 
 #if STM32_DCMI_USE_DCMI1 &&                                                   \

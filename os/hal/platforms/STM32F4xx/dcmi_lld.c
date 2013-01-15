@@ -91,9 +91,9 @@ static void dcmi_lld_serve_dma_rx_interrupt(DCMIDriver *dcmip, uint32_t flags) {
  */
 CH_IRQ_HANDLER(DCMI_IRQHandler) {
   CH_IRQ_PROLOGUE();
-
+  palSetPad(GPIOA, GPIOA_LED2);
   #if STM32_DCMI_USE_DCMI1
-    DCMI->ICR = 0;
+    DCMI->ICR |= STM32_DCMI_ICR_FRAME_ISC;
     _dcmi_isr_code(&DCMID1);
   #endif
 
@@ -137,13 +137,13 @@ void dcmi_lld_init(void) {
  */
 void dcmi_lld_start(DCMIDriver *dcmip) {
   /* If in stopped state then enables the DCMI and DMA clocks.*/
+  rccEnableDCMI(FALSE);
   if (dcmip->state == DCMI_STOP) {
 #if STM32_DCMI_USE_DCMI1
-    rccEnableDCMI(FALSE);
     if (&DCMID1 == dcmip) {
       bool_t b;
       b = dmaStreamAllocate(dcmip->dmarx,
-                            STM32_DCMI_DCMI1_IRQ_PRIORITY,
+                            STM32_DCMI_DCMI1_DMA_IRQ_PRIORITY,
                             (stm32_dmaisr_t)dcmi_lld_serve_dma_rx_interrupt,
                             (void *)dcmip);
       chDbgAssert(!b, "dcmi_lld_start(), #1", "stream already allocated");
@@ -163,13 +163,16 @@ void dcmi_lld_start(DCMIDriver *dcmip) {
   else {
     /* 10-14 bits per pixel clock -> data stored as half-words */
     dcmip->rxdmamode = (dcmip->rxdmamode & ~STM32_DMA_CR_SIZE_MASK) |
-                      STM32_DMA_CR_PSIZE_HWORD | STM32_DMA_CR_MSIZE_HWORD;
+                      STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD;
   }
   /* DCMI setup and enable.*/
-  dcmip->dcmi->CR  = 0;
-  dcmip->dcmi->CR  = dcmip->config->cr & 
-                     ~(STM32_DCMI_CR_CAPTURE | STM32_DCMI_CR_ENABLE) ;
-  dcmip->dcmi->IER = STM32_DCMI_IER_FRAME_IE;
+
+  nvicEnableVector( DCMI_IRQn, 
+             CORTEX_PRIORITY_MASK(STM32_DCMI_DCMI1_DCMI_IRQ_PRIORITY));
+
+  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
+  dcmip->dcmi->CR  |= (dcmip->config->cr & 
+                      ~(STM32_DCMI_CR_CAPTURE | STM32_DCMI_CR_ENABLE));
 }
 
 /**
@@ -183,13 +186,14 @@ void dcmi_lld_stop(DCMIDriver *dcmip) {
   /* If in ready state then disables the DCMI clock.*/
   if (dcmip->state == DCMI_READY) {
     /* DCMI disable.*/
-    dcmip->dcmi->CR = 0;
+    dcmip->dcmi->CR &= ~(STM32_DCMI_CR_CAPTURE|STM32_DCMI_CR_ENABLE);
     dmaStreamRelease(dcmip->dmarx);
 
 #if STM32_DCMI_USE_DCMI1
     if (&DCMID1 == dcmip)
       rccDisableDCMI(FALSE);
 #endif
+    nvicDisableVector(DCMI_IRQn);
  }
 }
 
@@ -214,7 +218,6 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
                       void* rxbuf0, void* rxbuf1) {
   /* Get DMA ready first */
   uint32_t dmaMode;
-  dcmip->dcmi->CR |= STM32_DCMI_CR_ENABLE;
   dmaStreamSetMemory0(dcmip->dmarx, rxbuf0);
   dmaStreamSetMemory1(dcmip->dmarx, rxbuf1);
   dmaStreamSetTransactionSize(dcmip->dmarx, n/4);
@@ -226,9 +229,10 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
   dmaStreamEnable(dcmip->dmarx);
 
   /* Now the DCMI */
+  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
   dcmip->dcmi->CR = oneShot ? dcmip->dcmi->CR | STM32_DCMI_CR_CM
                             : dcmip->dcmi->CR & (~STM32_DCMI_CR_CM);
-  dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE;
+  dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE | STM32_DCMI_CR_ENABLE;
 }
 
 #endif /* HAL_USE_DCMI */
