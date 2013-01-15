@@ -92,7 +92,6 @@ CSRC = $(PORTSRC) \
 # setting.
 CPPSRC = $(CHIBIOS)/os/various/cpp_wrappers/ch.cpp \
          main.cpp \
-         jpge.cpp \
          camera.cpp
 
 # C sources to be compiled in ARM mode regardless of the global setting.

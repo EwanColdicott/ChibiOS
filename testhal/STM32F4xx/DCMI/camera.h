@@ -1,14 +1,14 @@
 /*
- * camera.h - contains definitions and declarations useful for the use of the
+ * camera.h - contains definitions useful for the use of the
  * Toshiba TCM8230MD camera module on the Camera board.
  * Author: Ewan Coldicott
  * Date: 11 June 2012
+ * Modified: 14 Jan 2013 - removed most of it!
  */
 
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
-#include "jpge.h"
 
 /*
  * I2C slave address of TCM8230MD camera module
@@ -52,35 +52,16 @@
 #define CAM_CONFIG3_PICSEL_0      0x01
 
 
-//Output stream class, used by jpge in order to write the encoder output.
-class camBoard_jpge_output_stream : public jpge::output_stream {
-  public:
-    ~camBoard_jpge_output_stream();
-    bool put_buf(const void* Pbuf, int len);
-};
-
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {
 #endif
   void cameraInit(void);
-  
-  void cameraI2CTest(void);
-  
+    
   void cameraConfigure(void);
-  
-  bool_t cameraSnapshot(uint32_t* frame, uint32_t size);
 #ifdef __cplusplus
 }
 #endif
 #endif /* _FROM_ASM_ */
-
-//Captures an image from the camera and encodes it to JPEG format.
-//frame is the output buffer
-//size is the maximum number of bytes which can be written to the output buffer
-//If successful, returns the number of bytes in the JPEG file.
-//If the provided buffer is too small for the image, returns size+1
-//If any other error occurs, returns 0
-uint32_t cameraJpegSnapshot(uint8_t* frame, uint32_t size);
 
 #endif /* _CAMERA_H_ */

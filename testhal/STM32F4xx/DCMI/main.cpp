@@ -36,41 +36,23 @@
 
 using namespace std;
 
-#define JPEG_OUTPUT_MAX 32768          //Up to 32KiB allocated for each output JPEG file
-#define COMMS_READY 0xAC
- 
-static uint8_t jpegFrame1[JPEG_OUTPUT_MAX];   
-//static uint32_t frame1Size = 0;
-//static uint8_t jpegFrame2[JPEG_OUTPUT_MAX];
-//static uint32_t frame2Size = 0;
+const uint32_t IMG_HEIGHT = 160;
+const uint32_t IMG_WIDTH  = 120;
+const uint32_t BPP        = 2;       //bytes per pixel
+const uint32_t IMG_SIZE = IMG_HEIGHT*IMG_WIDTH*BPP;
 
-Thread* txThread;
+uint8_t imgBuf[IMG_SIZE];
 
-/*
- * PWM configuration structure, for Timer3 (IR LED).
- * Cyclic callback disabled.
- * Channel 2 enabled without callback.
- * The active state is a logic one.
- */
-static PWMConfig pwm3cfg = {
-  156000,                                   /* 156kHz PWM clock frequency.   */
-  4,                                        /* PWM period every 4 ticks (ie new period @ 39kHz - D = 0,0.25,0.50,0.75 possible) */
-  NULL,                                     /* No cyclic callback */
-  {
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_ACTIVE_HIGH, NULL},         /* Channel 2 enabled, active high output. No callback. */
-    {PWM_OUTPUT_DISABLED, NULL},
-    {PWM_OUTPUT_DISABLED, NULL}
-  },
-  /* HW dependent part.*/
-  0
+static const DCMIConfig dcmicfg = {
+   NULL,	//no Frame End callback
+   NULL,	//no DMA transfer complete callback,
+   0            //empty cr
 };
-
 
 /*
  * Serial driver 3 configuration structure.
  * Uses USART3, provides buffers, nice abstraction etc.
- * 115200bps, 8N1
+ * 57600bps, 8N1
  */
 static const SerialConfig sd3cfg = {
   57600,                    /* Bitrate */
@@ -99,85 +81,25 @@ static msg_t Thread1(void *arg) {
   return (msg_t) 0;
 }
 
-/*static WORKING_AREA(waThread2, 1024);
-static msg_t Thread2(void *arg) {
-  (void) arg;
-  bool_t buffer = FALSE;      //false=buf1, true=buf2
-  uint8_t* outBuf;
-  uint32_t* outBytes;
-  chRegSetThreadName("encoder");
-  while(TRUE) {
-    if( buffer == FALSE ) {
-      outBuf = jpegFrame1;
-      outBytes = &frame1Size;
-    } else {
-      outBuf = jpegFrame2;
-      outBytes = &frame2Size;
-    }
-
-    *outBytes = cameraJpegSnapshot(outBuf, JPEG_OUTPUT_MAX);
-    chMsgSend(txThread, buffer==FALSE ? 1 : 2);
-    buffer = !buffer;
-  }
-  
-  return 0;   //will never execute
-}*/
 
 static WORKING_AREA(waThread4, 2048);
 static msg_t Thread4(void *arg) {
   (void) arg;
   chRegSetThreadName("encoder-transmitter");
-  uint16_t outBytes;
-  uint8_t response;
   while(TRUE) {
     chThdSleepMilliseconds(5000);
-    outBytes = cameraJpegSnapshot(jpegFrame1, JPEG_OUTPUT_MAX);
-    chIOWriteTimeout((BaseChannel*)&SD3, (uint8_t*)&outBytes, 2, MS2ST(20) );
-    response = chIOGetTimeout( (BaseChannel*) &SD3, MS2ST(20) );
-    if( response != COMMS_READY ) continue;   //didn't get ACK back, don't transmit frame
+    chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:");
+    //using synchronous API for simplicity, single buffer.
+    //limits max image size to available SRAM. Note that max DMA transfers in one go is 65535.
+    // i.e. IMG_SIZE cannot be larger than 65535 here.
+    dcmiReceiveOneShot(&DCMID1, IMG_SIZE, imgBuf, NULL);
     palSetPad(GPIOA, GPIOA_LED2);
-    chIOWriteTimeout((BaseChannel*)&SD3, jpegFrame1, outBytes, MS2ST(1500));   //SERIAL driver method
+    send16bppBmpImage( (BaseSequentialStream*)&SD3, (uint16_t*)imgBuf, IMG_WIDTH, IMG_HEIGHT );
     palClearPad(GPIOA, GPIOA_LED2);
   }
   
   return 0;   //will never execute
 }
-
-/*static WORKING_AREA(waThread3, 512);
-static msg_t Thread3(void *arg) {
-  (void) arg;
-  msg_t bufferNumber;   //buffer number to transmit to comms board
-  msg_t response;
-  uint8_t* buf;         //pointer to JPEG buffer to transmit
-  uint16_t size;        //number of bytes to transmit
-  Thread* sender;       //thread performing JPEG conversions
-  chRegSetThreadName("transmitter");
-  while(TRUE) {
-    //sleep until message from encoder received, telling which buffer to send
-    sender = chMsgWait();
-    bufferNumber = chMsgGet( sender );
-    chMsgRelease( sender, 0 );
-
-    //send message to comms board to tell it how large the JPEG image is
-    buf = (bufferNumber == 1) ? jpegFrame1 : jpegFrame2;
-    size = (bufferNumber ==  1) ? frame1Size : frame2Size;
-    chIOWriteTimeout((BaseChannel*)&SD3, (uint8_t*)&size, 2, MS2ST(20) );
-    response = chIOGetTimeout( (BaseChannel*) &SD3, MS2ST(20) );
-    if( response != COMMS_READY ) continue;   //didn't get ACK back, don't transmit over SPI
-
-    //transmit frame over UART
-    chIOWriteTimeout((BaseChannel*)&SD3, buf, size, MS2ST(1500));   //SERIAL driver method
-//    sdStop(&SD3);
-//    uartStart(&UARTD3, &uart3cfg);
-//    uartStartSend(&UARTD3, size, buf);
-//    if(dmaStreamGetTransactionSize(UARTD3.dmatx) > 0) chThdSleepMilliseconds(3);
-//    uartStop(&UARTD3);
-//    sdStart(&SD3, &sd3cfg);
-    
-  }
-  
-  return 0;   //will never execute
-}*/
 
 /*
  * Application entry point.
@@ -196,40 +118,21 @@ int main(void) {
   /* Activates the serial driver 3 using the config structure defined above.
    * PC10(TX) and PC11(RX) are routed to USART3 in board.h */
   sdStart(&SD3, &sd3cfg);
-  
-  /* Initializes PWM driver 3 */
-  pwmStart(&PWMD3, &pwm3cfg);
-  pwmEnableChannel(&PWMD3, 1, 2);     /* Enable PWM output on channel 2, width 2 clock ticks -> D=0.5, 39kHz square wave */
-  
+ 
+  dcmiStart(&DCMID1, &dcmicfg);
+ 
   /* Initialises the I2C2 peripheral, tests for connectivity, enables camera
    * Defined in camera.h */
   cameraInit();
-  cameraI2CTest();
   cameraConfigure();
 
-  //perform UART test
-  uint8_t rx = chIOGet((BaseChannel*)&SD3);    //blocks until byte received
-  if( rx != 0xFA ) { chSysHalt(); }
-  chIOPut((BaseChannel*)&SD3, 0xFD );            //send acknowledgement byte
-  rx = chIOGet((BaseChannel*)&SD3);
-  if( rx != 0x7A ) { chSysHalt(); }
-  
-  /* Creates the blinker thread. */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
-  /* Creates the encoder thread */
-//  chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO, Thread2, NULL);
-  /* Creates the transmitter thread */
-//  txThread = chThdCreateStatic(waThread3, sizeof(waThread3), NORMALPRIO+1, Thread3, NULL);
-  /* Creates the encoder and transmitter thread (low fps)*/
   chThdCreateStatic(waThread4, sizeof(waThread4), NORMALPRIO, Thread4, NULL);
 
   /*
-   * Normal main() thread activity. Send an integer via UART to host PC.
+   * Normal main() thread activity. Do nothing.
    */
-//  chprintf((BaseChannel*) &SD3, "Ready for commands:\n\r");
-//  chprintf((BaseChannel*) &SD3, " - T/t: Test camera I2C connectivity\n\r");
-//  chprintf((BaseChannel*) &SD3, " - F/f: Get a frame from camera and send over UART\n\r"); 
-  while (TRUE) {
+ while (TRUE) {
     chThdSleepMilliseconds(500);
   }
 }

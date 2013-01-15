@@ -72,7 +72,7 @@
 /**
  * @brief   Enables the DCMI subsystem
  */
-#if !defined(HAL_USE_CAL) || defined (__DOXYGEN__)
+#if !defined(HAL_USE_DCMI) || defined (__DOXYGEN__)
 #define HAL_USE_DCMI                TRUE
 #endif
 

@@ -116,7 +116,7 @@ void dcmi_lld_init(void) {
   dcmiObjectInit(&DCMID1);
   DCMID1.dcmi      = DCMI;
   DCMID1.dmarx     = STM32_DMA_STREAM(STM32_DCMI_DCMI1_RX_DMA_STREAM);
-  DCMID1.rxdmamode = STM32_DMA_CR_CHSEL(DCMI1_RX_DMA_CHANNEL) |
+  DCMID1.rxdmamode = STM32_DMA_CR_CHSEL(1) |
                     STM32_DMA_CR_PL(STM32_DCMI_DCMI1_DMA_PRIORITY) |
                     STM32_DMA_CR_DIR_P2M |
                     STM32_DMA_CR_TCIE |
@@ -158,7 +158,7 @@ void dcmi_lld_start(DCMIDriver *dcmip) {
   if ( (dcmip->config->cr & STM32_DCMI_CR_EDM_MASK) == 0 ) {
     /* 8 bits per pixel clock (ie D[0:7] used) */
     dcmip->rxdmamode = (dcmip->rxdmamode & ~STM32_DMA_CR_SIZE_MASK) |
-                      STM32_DMA_CR_PSIZE_BYTE | STM32_DMA_CR_MSIZE_BYTE;
+                      STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD;
   }
   else {
     /* 10-14 bits per pixel clock -> data stored as half-words */
@@ -214,9 +214,10 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
                       void* rxbuf0, void* rxbuf1) {
   /* Get DMA ready first */
   uint32_t dmaMode;
+  dcmip->dcmi->CR |= STM32_DCMI_CR_ENABLE;
   dmaStreamSetMemory0(dcmip->dmarx, rxbuf0);
   dmaStreamSetMemory1(dcmip->dmarx, rxbuf1);
-  dmaStreamSetTransactionSize(dcmip->dmarx, n);
+  dmaStreamSetTransactionSize(dcmip->dmarx, n/4);
   dmaMode = dcmip->rxdmamode | STM32_DMA_CR_MINC;
   /* if second buffer not given, turn off double buffering */
   dmaMode = (rxbuf1 == NULL) ? dmaMode & (~STM32_DMA_CR_DBM)
@@ -227,7 +228,6 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
   /* Now the DCMI */
   dcmip->dcmi->CR = oneShot ? dcmip->dcmi->CR | STM32_DCMI_CR_CM
                             : dcmip->dcmi->CR & (~STM32_DCMI_CR_CM);
-  dcmip->dcmi->CR |= STM32_DCMI_CR_ENABLE;
   dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE;
 }
 

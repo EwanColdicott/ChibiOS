@@ -14,12 +14,12 @@ extern "C" {
 #endif
   /*
    * Encapsulates the provided image data (RGB565) into a Windows NT BMP file format.
-   * Transmits the image over the BaseChannel I/O channel pointed to by io.
+   * Transmits the image over the BaseSequentialStream I/O channel pointed to by io.
    * Assumes the image data is organised into horizontal scan lines (left to right)
    *   in sequence from the top of the image to the bottom.
    * Width, height are in pixels.
    */
-  void send16bppBmpImage( BaseChannel* io, uint16_t* pixels, int32_t width, int32_t height );
+  void send16bppBmpImage( BaseSequentialStream* io, uint16_t* pixels, int32_t width, int32_t height );
 #ifdef __cplusplus
 }
 #endif

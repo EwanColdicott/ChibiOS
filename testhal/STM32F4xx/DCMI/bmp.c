@@ -5,10 +5,10 @@
  * Date: 14 June 2012
  */
  
- #include "ch.h"
- #include "hal.h"
- #include "chprintf.h"
- #include "bmp.h"
+#include "ch.h"
+#include "hal.h"
+#include "chprintf.h"
+#include "bmp.h"
 
  typedef struct _WinBmpFileHeader
 {
@@ -42,7 +42,7 @@ typedef struct _WinNtBitfieldsMasks
 	uint32_t  AlphaMask;	     /* Mask identifying alpha component of image */
 } __attribute__((__packed__)) WinNtBitfieldsMasks;
  
- void send16bppBmpImage( BaseChannel* io, uint16_t* pixels, int32_t width, int32_t height ) {
+ void send16bppBmpImage( BaseSequentialStream* io, uint16_t* pixels, int32_t width, int32_t height ) {
   WinBmpFileHeader fileHeader;
   WinNtBitmapHeader bitmapHeader;
   WinNtBitfieldsMasks masks;
@@ -72,24 +72,24 @@ typedef struct _WinNtBitfieldsMasks
   masks.AlphaMask = 0x00000000;
   
   /* Ready to print image */
-  chIOWriteTimeout(io, (uint8_t*)&(fileHeader.FileType), sizeof(fileHeader.FileType), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(fileHeader.FileSize), sizeof(fileHeader.FileSize), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(fileHeader.Reserved1), sizeof(fileHeader.Reserved1), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(fileHeader.Reserved2), sizeof(fileHeader.Reserved2), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(fileHeader.BitmapOffset), sizeof(fileHeader.BitmapOffset), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.Size), sizeof(bitmapHeader.Size), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.Width), sizeof(bitmapHeader.Width), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.Height), sizeof(bitmapHeader.Height), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.Planes), sizeof(bitmapHeader.Planes), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.BitsPerPixel), sizeof(bitmapHeader.BitsPerPixel), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.Compression), sizeof(bitmapHeader.Compression), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.SizeOfBitmap), sizeof(bitmapHeader.SizeOfBitmap), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.HorzResolution), sizeof(bitmapHeader.HorzResolution), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.VertResolution), sizeof(bitmapHeader.VertResolution), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.ColoursUsed), sizeof(bitmapHeader.ColoursUsed), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&(bitmapHeader.ColoursImportant), sizeof(bitmapHeader.ColoursImportant), MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)&masks, 16, MS2ST(100));
-  chIOWriteTimeout(io, (uint8_t*)pixels, width*height*2, MS2ST(5000));
+  chSequentialStreamWrite(io, (uint8_t*)&(fileHeader.FileType), sizeof(fileHeader.FileType));
+  chSequentialStreamWrite(io, (uint8_t*)&(fileHeader.FileSize), sizeof(fileHeader.FileSize));
+  chSequentialStreamWrite(io, (uint8_t*)&(fileHeader.Reserved1), sizeof(fileHeader.Reserved1));
+  chSequentialStreamWrite(io, (uint8_t*)&(fileHeader.Reserved2), sizeof(fileHeader.Reserved2));
+  chSequentialStreamWrite(io, (uint8_t*)&(fileHeader.BitmapOffset), sizeof(fileHeader.BitmapOffset));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.Size), sizeof(bitmapHeader.Size));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.Width), sizeof(bitmapHeader.Width));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.Height), sizeof(bitmapHeader.Height));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.Planes), sizeof(bitmapHeader.Planes));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.BitsPerPixel), sizeof(bitmapHeader.BitsPerPixel));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.Compression), sizeof(bitmapHeader.Compression));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.SizeOfBitmap), sizeof(bitmapHeader.SizeOfBitmap));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.HorzResolution), sizeof(bitmapHeader.HorzResolution));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.VertResolution), sizeof(bitmapHeader.VertResolution));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.ColoursUsed), sizeof(bitmapHeader.ColoursUsed));
+  chSequentialStreamWrite(io, (uint8_t*)&(bitmapHeader.ColoursImportant), sizeof(bitmapHeader.ColoursImportant));
+  chSequentialStreamWrite(io, (uint8_t*)&masks, 16);
+  chSequentialStreamWrite(io, (uint8_t*)pixels, width*height*2);
   
   return;
  }
