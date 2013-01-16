@@ -102,8 +102,8 @@ static WORKING_AREA(waThread4, 2048);
 static msg_t Thread4(void *arg) {
   (void) arg;
   chRegSetThreadName("encoder-transmitter");
-  chEvtRegister(&es1, &el1, 1);
-  chEvtRegister(&es2, &el2, 2);
+  chEvtRegisterMask(&es1, &el1, EVENT_MASK(1));
+  chEvtRegisterMask(&es2, &el2, EVENT_MASK(2));
   while(TRUE) {
     chThdSleepMilliseconds(1000);
     chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:\n\r");
@@ -113,10 +113,8 @@ static msg_t Thread4(void *arg) {
     dcmiStartReceiveOneShot(&DCMID1, IMG_SIZE/2, imgBuf0, imgBuf1);
     chEvtWaitOne(EVENT_MASK(1));
     chprintf((BaseSequentialStream*)&SD3, "Got first DMA interrupt\n\r");
-    chEvtWaitOne(EVENT_MASK(1));
-    chprintf((BaseSequentialStream*)&SD3, "Got second DMA interrupt, waiting for DCMI\n\r");
-    chEvtWaitOne(EVENT_MASK(2));
-    chprintf((BaseSequentialStream*)&SD3, "Got DCMI interrupt, printing BMP\n\r");
+    chEvtWaitAll(EVENT_MASK(1) | EVENT_MASK(2));
+    chprintf((BaseSequentialStream*)&SD3, "Got second DMA interrupt, and DCMI interrupt, dumping BMP:\n\r");
     palSetPad(GPIOA, GPIOA_LED2);
     send16bppBmpImage( (BaseSequentialStream*)&SD3, (uint16_t*)imgBuf, IMG_WIDTH, IMG_HEIGHT );
     palClearPad(GPIOA, GPIOA_LED2);
