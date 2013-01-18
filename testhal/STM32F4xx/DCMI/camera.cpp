@@ -80,7 +80,7 @@ void cameraConfigure(void) {
 
   txbuf[0] = CAM_CONFIG3;
   txbuf[1] =
-//    CAM_CONFIG3_TESPIC |
+    CAM_CONFIG3_TESPIC |
     CAM_CONFIG3_HSYNCSEL |  /* HD blanking */ 
     CAM_CONFIG3_D_MASK_0 ;
   i2cAcquireBus( &I2CD2 );
