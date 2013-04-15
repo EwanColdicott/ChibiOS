@@ -1,16 +1,18 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
  * @file    SPC560Pxx/hal_lld.h
@@ -112,6 +114,18 @@
 #define SPC5_FMPLL_ODF_DIV4         (1U << 24)
 #define SPC5_FMPLL_ODF_DIV8         (2U << 24)
 #define SPC5_FMPLL_ODF_DIV16        (3U << 24)
+/** @} */
+
+/**
+ * @name    Clock selectors used in the various GCM SC registers
+ * @{
+ */
+#define SPC5_CGM_SS_MASK            (15U << 24)
+#define SPC5_CGM_SS_IRC             (0U << 24)
+#define SPC5_CGM_SS_XOSC            (2U << 24)
+#define SPC5_CGM_SS_FMPLL0          (4U << 24)
+#define SPC5_CGM_SS_FMPLL1          (5U << 24)
+#define SPC5_CGM_SS_FMPLL1_1D1      (8U << 24)
 /** @} */
 
 /**
@@ -220,14 +234,21 @@
  * @brief   Disables the clocks initialization in the HAL.
  */
 #if !defined(SPC5_NO_INIT) || defined(__DOXYGEN__)
-#define SPC5_NO_INIT                FALSE
+#define SPC5_NO_INIT                        FALSE
 #endif
 
 /**
  * @brief   Disables the overclock checks.
  */
 #if !defined(SPC5_ALLOW_OVERCLOCK) || defined(__DOXYGEN__)
-#define SPC5_ALLOW_OVERCLOCK        FALSE
+#define SPC5_ALLOW_OVERCLOCK                FALSE
+#endif
+
+/**
+ * @brief   Disables the watchdog on start.
+ */
+#if !defined(SPC5_DISABLE_WATCHDOG) || defined(__DOXYGEN__)
+#define SPC5_DISABLE_WATCHDOG               TRUE
 #endif
 
 /**
@@ -235,7 +256,7 @@
  * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
  */
 #if !defined(SPC5_FMPLL0_IDF_VALUE) || defined(__DOXYGEN__)
-#define SPC5_FMPLL0_IDF_VALUE       5
+#define SPC5_FMPLL0_IDF_VALUE               5
 #endif
 
 /**
@@ -243,7 +264,7 @@
  * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
  */
 #if !defined(SPC5_FMPLL0_NDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_FMPLL0_NDIV_VALUE      32
+#define SPC5_FMPLL0_NDIV_VALUE              32
 #endif
 
 /**
@@ -251,31 +272,92 @@
  * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
  */
 #if !defined(SPC5_FMPLL0_ODF) || defined(__DOXYGEN__)
-#define SPC5_FMPLL0_ODF             SPC5_FMPLL_ODF_DIV4
+#define SPC5_FMPLL0_ODF                     SPC5_FMPLL_ODF_DIV4
 #endif
 
 /**
  * @brief   FMPLL1 IDF divider value.
- * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
+ * @note    The default value is calculated for XOSC=40MHz and PHI=120MHz.
  */
 #if !defined(SPC5_FMPLL1_IDF_VALUE) || defined(__DOXYGEN__)
-#define SPC5_FMPLL1_IDF_VALUE       5
+#define SPC5_FMPLL1_IDF_VALUE               5
 #endif
 
 /**
  * @brief   FMPLL1 NDIV divider value.
- * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
+ * @note    The default value is calculated for XOSC=40MHz and PHI=120MHz.
  */
 #if !defined(SPC5_FMPLL1_NDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_FMPLL1_NDIV_VALUE      60
+#define SPC5_FMPLL1_NDIV_VALUE              60
 #endif
 
 /**
  * @brief   FMPLL1 ODF divider value.
- * @note    The default value is calculated for XOSC=40MHz and PHI=64MHz.
+ * @note    The default value is calculated for XOSC=40MHz and PHI=120MHz.
  */
 #if !defined(SPC5_FMPLL1_ODF) || defined(__DOXYGEN__)
-#define SPC5_FMPLL1_ODF             SPC5_FMPLL_ODF_DIV4
+#define SPC5_FMPLL1_ODF                     SPC5_FMPLL_ODF_DIV4
+#endif
+
+/**
+ * @brief   AUX0 clock source.
+ */
+#if !defined(SPC5_AUX0CLK_SRC) || defined(__DOXYGEN__)
+#define SPC5_AUX0CLK_SRC                    SPC5_CGM_SS_FMPLL1
+#endif
+
+/**
+ * @brief   Motor Control clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_MCONTROL_DIVIDER_VALUE) || defined(__DOXYGEN__)
+#define SPC5_MCONTROL_DIVIDER_VALUE         2
+#endif
+
+/**
+ * @brief   AUX1 clock source.
+ * @note    Not configurable, always selects FMPLL1.
+ */
+#if !defined(SPC5_AUX1CLK_SRC) || defined(__DOXYGEN__)
+#define SPC5_AUX1CLK_SRC                    0
+#endif
+
+/**
+ * @brief   FMPLL1 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_FMPLL1_CLK_DIVIDER_VALUE) || defined(__DOXYGEN__)
+#define SPC5_FMPLL1_CLK_DIVIDER_VALUE       2
+#endif
+
+/**
+ * @brief   AUX2 clock source.
+ */
+#if !defined(SPC5_AUX2CLK_SRC) || defined(__DOXYGEN__)
+#define SPC5_AUX2CLK_SRC                    SPC5_CGM_SS_FMPLL1
+#endif
+
+/**
+ * @brief   SP clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_SP_CLK_DIVIDER_VALUE) || defined(__DOXYGEN__)
+#define SPC5_SP_CLK_DIVIDER_VALUE           2
+#endif
+
+/**
+ * @brief   AUX3 clock source.
+ */
+#if !defined(SPC5_AUX3CLK_SRC) || defined(__DOXYGEN__)
+#define SPC5_AUX3CLK_SRC                    SPC5_CGM_SS_FMPLL1
+#endif
+
+/**
+ * @brief   FR clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_FR_CLK_DIVIDER_VALUE) || defined(__DOXYGEN__)
+#define SPC5_FR_CLK_DIVIDER_VALUE           2
 #endif
 
 /**
@@ -584,6 +666,15 @@
 #define SPC5_PIT0_IRQ_PRIORITY              4
 #endif
 
+/**
+ * @brief   Clock initialization failure hook.
+ * @note    The default is to stop the system and let the RTC restart it.
+ * @note    The hook code must not return.
+ */
+#if !defined(SPC5_CLOCK_FAILURE_HOOK) || defined(__DOXYGEN__)
+#define SPC5_CLOCK_FAILURE_HOOK()           chSysHalt()
+#endif
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -693,6 +784,136 @@
 #error "SPC5_FMPLL1_CLK outside acceptable range (0...SPC5_FMPLL1_CLK_MAX)"
 #endif
 
+/**
+ * @brief   AUX0 clock point.
+ */
+#if (SPC5_AUX0CLK_SRC == SPC5_CGM_SS_IRC) || defined(__DOXYGEN__)
+#define SPC5_AUX0_CLK           SPC5_FMPLL_SRC_IRC
+#elif SPC5_AUX0CLK_SRC == SPC5_CGM_SS_XOSC
+#define SPC5_AUX0_CLK           SPC5_FMPLL_SRC_XOSC
+#elif SPC5_AUX0CLK_SRC == SPC5_CGM_SS_FMPLL0
+#define SPC5_AUX0_CLK           SPC5_FMPLL0_CLK
+#elif SPC5_AUX0CLK_SRC == SPC5_CGM_SS_FMPLL1
+#define SPC5_AUX0_CLK           SPC5_FMPLL1_CLK
+#else
+#error "invalid SPC5_AUX0CLK_SRC value specified"
+#endif
+
+/* Check on the AUX0 divider 0 settings.*/
+#if SPC5_MCONTROL_DIVIDER_VALUE == 0
+#define SPC5_CGM_AC0_DC0        0
+#elif (SPC5_MCONTROL_DIVIDER_VALUE >= 1) && (SPC5_MCONTROL_DIVIDER_VALUE <= 16)
+#define SPC5_CGM_AC0_DC0        ((0x80U | (SPC5_MCONTROL_DIVIDER_VALUE - 1)) << 24)
+#else
+#error "invalid SPC5_MCONTROL_DIVIDER_VALUE value specified"
+#endif
+
+/**
+ * @brief   Motor Control clock point.
+ */
+#if (SPC5_MCONTROL_DIVIDER_VALUE) != 0 || defined(__DOXYGEN)
+#define SPC5_MCONTROL_CLK       (SPC5_AUX0_CLK / SPC5_MCONTROL_DIVIDER_VALUE)
+#else
+#define SPC5_MCONTROL_CLK       0
+#endif
+
+/**
+ * @brief   AUX1 clock point.
+ */
+#if (SPC5_AUX1CLK_SRC == 0) || defined(__DOXYGEN__)
+#define SPC5_AUX1_CLK           SPC5_FMPLL1_CLK
+#else
+#error "invalid SPC5_AUX1CLK_SRC value specified"
+#endif
+
+/* Check on the AUX1 divider 0 settings.*/
+#if SPC5_FMPLL1_CLK_DIVIDER_VALUE == 0
+#define SPC5_CGM_AC1_DC0        0
+#elif (SPC5_FMPLL1_CLK_DIVIDER_VALUE >= 1) && (SPC5_FMPLL1_CLK_DIVIDER_VALUE <= 16)
+#define SPC5_CGM_AC1_DC0        ((0x80U | (SPC5_FMPLL1_CLK_DIVIDER_VALUE - 1)) << 24)
+#else
+#error "invalid SPC5_FMPLL1_CLK_DIVIDER_VALUE value specified"
+#endif
+
+/**
+ * @brief   FMPLL1 clock point.
+ */
+#if (SPC5_MCONTROL_DIVIDER_VALUE) != 0 || defined(__DOXYGEN)
+#define SPC5_FMPLL1_DIV_CLK     (SPC5_AUX1_CLK / SPC5_FMPLL1_CLK_DIVIDER_VALUE)
+#else
+#define SPC5_FMPLL1_DIV_CLK     0
+#endif
+
+/**
+ * @brief   AUX2 clock point.
+ */
+#if (SPC5_AUX2CLK_SRC == SPC5_CGM_SS_IRC) || defined(__DOXYGEN__)
+#define SPC5_AUX2_CLK           SPC5_FMPLL_SRC_IRC
+#elif SPC5_AUX2CLK_SRC == SPC5_CGM_SS_XOSC
+#define SPC5_AUX2_CLK           SPC5_FMPLL_SRC_XOSC
+#elif SPC5_AUX2CLK_SRC == SPC5_CGM_SS_FMPLL0
+#define SPC5_AUX2_CLK           SPC5_FMPLL0_CLK
+#elif SPC5_AUX2CLK_SRC == SPC5_CGM_SS_FMPLL1
+#define SPC5_AUX2_CLK           SPC5_FMPLL1_CLK
+#elif SPC5_AUX2CLK_SRC == SPC5_CGM_SS_FMPLL1_1D1
+#define SPC5_AUX2_CLK           SPC5_FMPLL1_1D1_CLK
+#else
+#error "invalid SPC5_AUX2CLK_SRC value specified"
+#endif
+
+/* Check on the AUX2 divider 0 settings.*/
+#if SPC5_SP_CLK_DIVIDER_VALUE == 0
+#define SPC5_CGM_AC2_DC0        0
+#elif (SPC5_SP_CLK_DIVIDER_VALUE >= 1) && (SPC5_SP_CLK_DIVIDER_VALUE <= 16)
+#define SPC5_CGM_AC2_DC0        ((0x80U | (SPC5_SP_CLK_DIVIDER_VALUE - 1)) << 24)
+#else
+#error "invalid SPC5_SP_CLK_DIVIDER_VALUE value specified"
+#endif
+
+/**
+ * @brief   SP clock point.
+ */
+#if (SPC5_SP_CLK_DIVIDER_VALUE) != 0 || defined(__DOXYGEN)
+#define SPC5_SP_CLK             (SPC5_AUX2_CLK / SPC5_SP_CLK_DIVIDER_VALUE)
+#else
+#define SPC5_SP_CLK             0
+#endif
+
+/**
+ * @brief   AUX3 clock point.
+ */
+#if (SPC5_AUX3CLK_SRC == SPC5_CGM_SS_IRC) || defined(__DOXYGEN__)
+#define SPC5_AUX3_CLK           SPC5_FMPLL_SRC_IRC
+#elif SPC5_AUX3CLK_SRC == SPC5_CGM_SS_XOSC
+#define SPC5_AUX3_CLK           SPC5_FMPLL_SRC_XOSC
+#elif SPC5_AUX3CLK_SRC == SPC5_CGM_SS_FMPLL0
+#define SPC5_AUX3_CLK           SPC5_FMPLL0_CLK
+#elif SPC5_AUX3CLK_SRC == SPC5_CGM_SS_FMPLL1
+#define SPC5_AUX3_CLK           SPC5_FMPLL1_CLK
+#elif SPC5_AUX3CLK_SRC == SPC5_CGM_SS_FMPLL1_1D1
+#define SPC5_AUX3_CLK           SPC5_FMPLL1_1D1_CLK
+#else
+#error "invalid SPC5_AUX3CLK_SRC value specified"
+#endif
+
+/* Check on the AUX3 divider 0 settings.*/
+#if SPC5_FR_CLK_DIVIDER_VALUE == 0
+#define SPC5_CGM_AC3_DC0        0
+#elif (SPC5_FR_CLK_DIVIDER_VALUE >= 1) && (SPC5_FR_CLK_DIVIDER_VALUE <= 16)
+#define SPC5_CGM_AC3_DC0        ((0x80U | (SPC5_FR_CLK_DIVIDER_VALUE - 1)) << 24)
+#else
+#error "invalid SPC5_FR_CLK_DIVIDER_VALUE value specified"
+#endif
+
+/**
+ * @brief   FR clock point.
+ */
+#if (SPC5_FR_CLK_DIVIDER_VALUE) != 0 || defined(__DOXYGEN)
+#define SPC5_FR_CLK             (SPC5_AUX3_CLK / SPC5_FR_CLK_DIVIDER_VALUE)
+#else
+#define SPC5_FR_CLK             0
+#endif
+
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
@@ -716,6 +937,8 @@ typedef enum {
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
+
+#include "spc5_edma.h"
 
 #ifdef __cplusplus
 extern "C" {
