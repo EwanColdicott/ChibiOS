@@ -51,7 +51,6 @@ EventListener el1, el2;
 static volatile uint32_t frameEndCbCount = 0;
 static volatile uint32_t dmaTxferEndCbCount = 0;
 
-
 void frameEndCb(DCMIDriver* dcmip) {
    (void) dcmip;
    chSysLockFromIsr();
