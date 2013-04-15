@@ -36,8 +36,8 @@
 
 using namespace std;
 
-const uint32_t IMG_HEIGHT = 160;
-const uint32_t IMG_WIDTH  = 120;
+const uint32_t IMG_HEIGHT = 96;
+const uint32_t IMG_WIDTH  = 128;
 const uint32_t BPP        = 2;       //bytes per pixel
 const uint32_t IMG_SIZE = IMG_HEIGHT*IMG_WIDTH*BPP;
 
@@ -48,15 +48,24 @@ uint8_t* imgBuf1 = &imgBuf[IMG_SIZE/2];
 EventSource es1, es2;
 EventListener el1, el2;
 
+static volatile uint32_t frameEndCbCount = 0;
+static volatile uint32_t dmaTxferEndCbCount = 0;
+
 
 void frameEndCb(DCMIDriver* dcmip) {
    (void) dcmip;
+   chSysLockFromIsr();
    chEvtBroadcastI(&es2);
+   frameEndCbCount++;
+   chSysUnlockFromIsr();
 }
 
 void dmaTxferEndCb(DCMIDriver* dcmip) {
    (void) dcmip;
+   chSysLockFromIsr();
    chEvtBroadcastI(&es1);
+   dmaTxferEndCbCount++;
+   chSysUnlockFromIsr();
 }
 
 static const DCMIConfig dcmicfg = {
@@ -91,9 +100,9 @@ static msg_t Thread1(void *arg) {
     palSetPad(GPIOA, GPIOA_LED2);       /* User LED */
     chThdSleepMilliseconds(10);
     palClearPad(GPIOA, GPIOA_LED2); 
-    chThdSleepMilliseconds(5000);
+   // chprintf((BaseSequentialStream*)&SD3,"DMA: %d Frame: %d\r\n", dmaTxferEndCbCount, frameEndCbCount);
+    chThdSleepMilliseconds(1000);
   }
-  
   return (msg_t) 0;
 }
 
@@ -105,16 +114,16 @@ static msg_t Thread4(void *arg) {
   chEvtRegisterMask(&es1, &el1, EVENT_MASK(1));
   chEvtRegisterMask(&es2, &el2, EVENT_MASK(2));
   while(TRUE) {
-    chThdSleepMilliseconds(1000);
-    chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:\n\r");
+    chThdSleepMilliseconds(10000);
+    //chprintf((BaseSequentialStream*)&SD3, "Beginning transfer:\n\r");
     //using synchronous API for simplicity, single buffer.
     //limits max image size to available SRAM. Note that max DMA transfers in one go is 65535.
     // i.e. IMG_SIZE cannot be larger than 65535 here.
     dcmiStartReceiveOneShot(&DCMID1, IMG_SIZE/2, imgBuf0, imgBuf1);
     chEvtWaitOne(EVENT_MASK(1));
-    chprintf((BaseSequentialStream*)&SD3, "Got first DMA interrupt\n\r");
-    chEvtWaitAll(EVENT_MASK(1) | EVENT_MASK(2));
-    chprintf((BaseSequentialStream*)&SD3, "Got second DMA interrupt, and DCMI interrupt, dumping BMP:\n\r");
+    chEvtWaitOne(EVENT_MASK(1)); //| EVENT_MASK(2));
+    chThdSleepMilliseconds(1);
+    chprintf((BaseSequentialStream*)&SD3, "%u DMAs, %u Frames, dumping BMP:\n\r", dmaTxferEndCbCount, frameEndCbCount );
     palSetPad(GPIOA, GPIOA_LED2);
     send16bppBmpImage( (BaseSequentialStream*)&SD3, (uint16_t*)imgBuf, IMG_WIDTH, IMG_HEIGHT );
     palClearPad(GPIOA, GPIOA_LED2);
@@ -149,6 +158,7 @@ int main(void) {
   /* Initialises the I2C2 peripheral, tests for connectivity, enables camera
    * Defined in camera.h */
   cameraInit();
+  cameraI2CTest();
   cameraConfigure();
 
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);

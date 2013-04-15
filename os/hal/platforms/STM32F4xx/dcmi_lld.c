@@ -28,6 +28,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "chprintf.h"
 
 #if HAL_USE_DCMI || defined(__DOXYGEN__)
 
@@ -124,7 +125,10 @@ void dcmi_lld_init(void) {
                     STM32_DMA_CR_DMEIE |
                     STM32_DMA_CR_TEIE |
                     STM32_DMA_CR_PBURST_SINGLE |
-                    STM32_DMA_CR_MBURST_SINGLE ;
+                    STM32_DMA_CR_MBURST_SINGLE |
+                    STM32_DMA_CR_PSIZE_WORD |
+                    STM32_DMA_CR_MSIZE_WORD |
+                    STM32_DMA_CR_MINC ;
 #endif
 
 }
@@ -155,24 +159,14 @@ void dcmi_lld_start(DCMIDriver *dcmip) {
   }
 
   /* Configuration-specific DMA setup.*/
-  /* TODO: Use DMA FIFO */
-  if ( (dcmip->config->cr & STM32_DCMI_CR_EDM_MASK) == 0 ) {
-    /* 8 bits per pixel clock (ie D[0:7] used) */
-    dcmip->rxdmamode = (dcmip->rxdmamode & ~STM32_DMA_CR_SIZE_MASK) |
-                      STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD;
-  }
-  else {
-    /* 10-14 bits per pixel clock -> data stored as half-words */
-    dcmip->rxdmamode = (dcmip->rxdmamode & ~STM32_DMA_CR_SIZE_MASK) |
-                      STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD;
-  }
-  /* DCMI setup and enable.*/
+  dcmip->rxdmamode = (dcmip->rxdmamode & ~STM32_DMA_CR_SIZE_MASK) |
+                    STM32_DMA_CR_PSIZE_WORD | STM32_DMA_CR_MSIZE_WORD;
 
   nvicEnableVector( DCMI_IRQn, 
              CORTEX_PRIORITY_MASK(STM32_DCMI_DCMI1_DCMI_IRQ_PRIORITY));
 
-  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
-  dcmip->dcmi->CR  |= (dcmip->config->cr & 
+//  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
+  dcmip->dcmi->CR  = (dcmip->config->cr & 
                       ~(STM32_DCMI_CR_CAPTURE | STM32_DCMI_CR_ENABLE));
 }
 
@@ -222,18 +216,23 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
   dmaStreamSetMemory0(dcmip->dmarx, rxbuf0);
   dmaStreamSetMemory1(dcmip->dmarx, rxbuf1);
   dmaStreamSetTransactionSize(dcmip->dmarx, n/4);
+  chprintf((BaseSequentialStream*)&SD3, "%d trans\r\n", n/4);
   dmaMode = dcmip->rxdmamode | STM32_DMA_CR_MINC;
   /* if second buffer not given, turn off double buffering */
   dmaMode = (rxbuf1 == NULL) ? dmaMode & (~STM32_DMA_CR_DBM)
                              : dmaMode | STM32_DMA_CR_DBM ;
   dmaStreamSetMode(dcmip->dmarx, dmaMode);
+  dmaStreamSetFIFO(dcmip->dmarx,
+    STM32_DMA_FCR_FTH_FULL |
+    STM32_DMA_FCR_DMDIS );
   dmaStreamEnable(dcmip->dmarx);
 
   /* Now the DCMI */
-  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
+//  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
   dcmip->dcmi->CR = oneShot ? dcmip->dcmi->CR | STM32_DCMI_CR_CM
                             : dcmip->dcmi->CR & (~STM32_DCMI_CR_CM);
-  dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE | STM32_DCMI_CR_ENABLE;
+  dcmip->dcmi->CR |= STM32_DCMI_CR_ENABLE;
+  dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE;
 }
 
 #endif /* HAL_USE_DCMI */

@@ -9,6 +9,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "camera.h"
+#include "chprintf.h"
 
 using namespace std;
  
@@ -80,7 +81,7 @@ void cameraConfigure(void) {
 
   txbuf[0] = CAM_CONFIG3;
   txbuf[1] =
-//    CAM_CONFIG3_TESPIC |
+    CAM_CONFIG3_TESPIC |
     CAM_CONFIG3_HSYNCSEL |  /* HD blanking */ 
     CAM_CONFIG3_D_MASK_0 ;
   i2cAcquireBus( &I2CD2 );
@@ -91,12 +92,39 @@ void cameraConfigure(void) {
   txbuf[0] = CAM_CONFIG2;
   txbuf[1] =
     CAM_CONFIG2_PICFMT   |  /* PICFMT = 1 -> RGB565 output. PICFMT = 0 -> YUV422 */
-    CAM_CONFIG2_PICSIZ_0 |  /* 160x120 */
-    CAM_CONFIG2_PICSIZ_1 ;
+//    CAM_CONFIG2_PICSIZ_0 |  /* 160x120 */
+//    CAM_CONFIG2_PICSIZ_1 |
+    CAM_CONFIG2_PICSIZ_3 ;
   i2cAcquireBus( &I2CD2 );
   i2cMasterTransmitTimeout( &I2CD2, CAM_ADDR, txbuf, 2, NULL, 0, tmo );
   i2cReleaseBus( &I2CD2 );
 }
 
 
+/*
+ *      Camera I2C communication test code. Prints result on Serial Driver 3
+ */
+void cameraI2CTest(void) {        
+  msg_t status = RDY_OK;
+  systime_t tmo = MS2ST(10);
+
+  /* Camera should be ready to respond to requests: test it. */
+  /* The camera should acknowledge the I2C transaction */
+  uint8_t txbuf[2];
+  txbuf[0] = CAM_CONFIG1;         
+  txbuf[1] = CAM_CONFIG1_DEFAULT; 
+  i2cAcquireBus( &I2CD2 );        
+  status = i2cMasterTransmitTimeout( &I2CD2, CAM_ADDR, txbuf, 2, NULL, 0, tmo );
+  i2cReleaseBus( &I2CD2 );
+  
+  if( status == RDY_RESET ) {     
+    //chprintf((BaseChannel*)&SD3, "Camera I2C test: Error %X\n\r", i2cGetErrors(&I2CD2));
+  }
+  else if( status == RDY_TIMEOUT ) {
+    //chprintf((BaseChannel*)&SD3, "Camera I2C test: Timeout\n\r");
+  }
+  else {
+ //   chprintf((BaseChannel*)&SD3, "Camera I2C test: Success\n\r");
+  }
+}
 
