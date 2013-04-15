@@ -1,16 +1,18 @@
 /*
- * Licensed under ST Liberty SW License Agreement V2, (the "License");
- * You may not use this file except in compliance with the License.
- * You may obtain a copy of the License at:
- *
- *        http://www.st.com/software_license_agreement_liberty_v2
- *
- * Unless required by applicable law or agreed to in writing, software 
- * distributed under the License is distributed on an "AS IS" BASIS, 
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+    SPC5 HAL - Copyright (C) 2013 STMicroelectronics
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+*/
 
 /**
  * @file    SPC560BCxx/hal_lld.h
@@ -237,19 +239,10 @@
 #endif
 
 /**
- * @brief   XOSC divider value.
- * @note    The allowed range is 1...32.
+ * @brief   Disables the watchdog on start.
  */
-#if !defined(SPC5_XOSCDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_XOSCDIV_VALUE                  1
-#endif
-
-/**
- * @brief   Fast IRC divider value.
- * @note    The allowed range is 1...32.
- */
-#if !defined(SPC5_IRCDIV_VALUE) || defined(__DOXYGEN__)
-#define SPC5_IRCDIV_VALUE                   1
+#if !defined(SPC5_DISABLE_WATCHDOG) || defined(__DOXYGEN__)
+#define SPC5_DISABLE_WATCHDOG               TRUE
 #endif
 
 /**
@@ -274,6 +267,46 @@
  */
 #if !defined(SPC5_FMPLL0_ODF) || defined(__DOXYGEN__)
 #define SPC5_FMPLL0_ODF                     SPC5_FMPLL_ODF_DIV4
+#endif
+
+/**
+ * @brief   XOSC divider value.
+ * @note    The allowed range is 1...32.
+ */
+#if !defined(SPC5_XOSCDIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_XOSCDIV_VALUE                  1
+#endif
+
+/**
+ * @brief   Fast IRC divider value.
+ * @note    The allowed range is 1...32.
+ */
+#if !defined(SPC5_IRCDIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_IRCDIV_VALUE                   1
+#endif
+
+/**
+ * @brief   Peripherals Set 1 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL1_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL1_CLK_DIV_VALUE      2
+#endif
+
+/**
+ * @brief   Peripherals Set 2 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL2_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL2_CLK_DIV_VALUE      2
+#endif
+
+/**
+ * @brief   Peripherals Set 3 clock divider value.
+ * @note    Zero means disabled clock.
+ */
+#if !defined(SPC5_PERIPHERAL3_CLK_DIV_VALUE) || defined(__DOXYGEN__)
+#define SPC5_PERIPHERAL3_CLK_DIV_VALUE      2
 #endif
 
 /**
@@ -589,6 +622,15 @@
 #define SPC5_PIT0_IRQ_PRIORITY              4
 #endif
 
+/**
+ * @brief   Clock initialization failure hook.
+ * @note    The default is to stop the system and let the RTC restart it.
+ * @note    The hook code must not return.
+ */
+#if !defined(SPC5_CLOCK_FAILURE_HOOK) || defined(__DOXYGEN__)
+#define SPC5_CLOCK_FAILURE_HOOK()           chSysHalt()
+#endif
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -662,6 +704,36 @@
 #error "SPC5_FMPLL0_CLK outside acceptable range (0...SPC5_FMPLL0_CLK_MAX)"
 #endif
 
+/* Check on the peripherals set 1 clock divider settings.*/
+#if SPC5_PERIPHERAL1_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC0         0
+#elif (SPC5_PERIPHERAL1_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL1_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC0         (0x80 | (SPC5_PERIPHERAL1_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL1_CLK_DIV_VALUE value specified"
+#endif
+
+/* Check on the peripherals set 2 clock divider settings.*/
+#if SPC5_PERIPHERAL2_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC1         0
+#elif (SPC5_PERIPHERAL2_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL2_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC1         (0x80 | (SPC5_PERIPHERAL2_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL2_CLK_DIV_VALUE value specified"
+#endif
+
+/* Check on the peripherals set 3 clock divider settings.*/
+#if SPC5_PERIPHERAL3_CLK_DIV_VALUE == 0
+#define SPC5_CGM_SC_DC2         0
+#elif (SPC5_PERIPHERAL3_CLK_DIV_VALUE >= 1) &&                              \
+      (SPC5_PERIPHERAL3_CLK_DIV_VALUE <= 16)
+#define SPC5_CGM_SC_DC2         (0x80 | (SPC5_PERIPHERAL3_CLK_DIV_VALUE - 1))
+#else
+#error "invalid SPC5_PERIPHERAL3_CLK_DIV_VALUE value specified"
+#endif
+
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
@@ -685,6 +757,8 @@ typedef enum {
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
+
+#include "spc5_edma.h"
 
 #ifdef __cplusplus
 extern "C" {
