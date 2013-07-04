@@ -48,6 +48,7 @@
 #include "adc.h"
 #include "can.h"
 #include "dcmi.h"
+#include "dac.h"
 #include "ext.h"
 #include "gpt.h"
 #include "i2c.h"

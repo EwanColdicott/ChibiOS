@@ -18,7 +18,7 @@
 #define _BOARD_H_
 
 /*
- * Setup for a generic SPC563Mxx proto board.
+ * Setup for a generic SPC564Axx proto board.
  */
 
 /*
@@ -31,7 +31,7 @@
  * Board frequencies.
  */
 #if !defined(SPC5_XOSC_CLK)
-#define SPC5_XOSC_CLK               40000000
+#define SPC5_XOSC_CLK               8000000
 #endif
 
 /*

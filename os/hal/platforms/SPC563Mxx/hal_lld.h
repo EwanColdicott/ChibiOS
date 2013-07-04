@@ -132,7 +132,7 @@
  * @brief   External clock pre-divider.
  * @note    Must be in range 1...15.
  */
-#if !defined(SPC5_CLK_PREDIV) || defined(__DOXYGEN__)
+#if !defined(SPC5_CLK_PREDIV_VALUE) || defined(__DOXYGEN__)
 #define SPC5_CLK_PREDIV_VALUE               2
 #endif
 
@@ -169,6 +169,13 @@
                                              BIUCR_BFEN)
 #endif
 
+/**
+ * @brief   eMIOS global prescaler value.
+ */
+#if !defined(SPC5_EMIOS_GPRE_VALUE) || defined(__DOXYGEN__)
+#define SPC5_EMIOS_GPRE_VALUE               20
+#endif
+
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
@@ -191,6 +198,10 @@
 #if (SPC5_CLK_RFD != SPC5_RFD_DIV2) && (SPC5_CLK_RFD != SPC5_RFD_DIV4) &&   \
     (SPC5_CLK_RFD != SPC5_RFD_DIV8) && (SPC5_CLK_RFD != SPC5_RFD_DIV16)
 #error "invalid SPC5_CLK_RFD value specified"
+#endif
+
+#if (SPC5_EMIOS_GPRE_VALUE < 1) || (SPC5_EMIOS_GPRE_VALUE > 256)
+#error "invalid SPC5_EMIOS_GPRE_VALUE value specified"
 #endif
 
 /**
@@ -238,6 +249,11 @@
 #else
 #define SPC5_FLASH_WS       (BIUCR_APC_3 | BIUCR_RWSC_3 | BIUCR_WWSC_1)
 #endif
+
+/**
+ * @brief   eMIOS global prescaler setting.
+ */
+#define SPC5_EMIOS_GPRE     (SPC5_EMIOS_GPRE_VALUE << 8)
 
 /*===========================================================================*/
 /* Driver data structures and types.                                         */
