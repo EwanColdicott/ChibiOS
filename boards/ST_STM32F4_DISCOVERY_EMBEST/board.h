@@ -334,9 +334,9 @@
                                      PIN_AFIO_AF(GPIOA_PIN1, 0) |           \
                                      PIN_AFIO_AF(GPIOA_PIN2, 0) |           \
                                      PIN_AFIO_AF(GPIOA_PIN3, 0) |           \
-                                     PIN_AFIO_AF(GPIOA_LRCK, 6) |           \
+                                     PIN_AFIO_AF(GPIOA_CAM_HSYNC, TODO) |           \
                                      PIN_AFIO_AF(GPIOA_SPC, 5) |            \
-                                     PIN_AFIO_AF(GPIOA_SDO, 5) |            \
+                                     PIN_AFIO_AF(GPIOA_SDO, 5) |  TODO from here          \
                                      PIN_AFIO_AF(GPIOA_SDI, 5))
 #define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_PIN8, 0) |           \
                                      PIN_AFIO_AF(GPIOA_VBUS_FS, 0) |        \
