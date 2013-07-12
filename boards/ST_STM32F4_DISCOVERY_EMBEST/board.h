@@ -336,7 +336,7 @@
                                      PIN_AFIO_AF(GPIOA_PIN3, 0) |           \
                                      PIN_AFIO_AF(GPIOA_CAM_HSYNC, TODO) |           \
                                      PIN_AFIO_AF(GPIOA_SPC, 5) |            \
-                                     PIN_AFIO_AF(GPIOA_SDO, 5) |  TODO from here          \
+                                     PIN_AFIO_AF(GPIOA_CAM_PCLK, TODO) |            \
                                      PIN_AFIO_AF(GPIOA_SDI, 5))
 #define VAL_GPIOA_AFRH              (PIN_AFIO_AF(GPIOA_PIN8, 0) |           \
                                      PIN_AFIO_AF(GPIOA_VBUS_FS, 0) |        \
@@ -356,10 +356,10 @@
  * PB3  - SWO                       (alternate 0).
  * PB4  - PIN4                      (input pullup).
  * PB5  - PIN5                      (input pullup).
- * PB6  - SCL                       (alternate 4).
- * PB7  - PIN7                      (input pullup).
- * PB8  - PIN8                      (input pullup).
- * PB9  - SDA                       (alternate 4).
+ * PB6  - CAM_B5                    (alternate TODO).
+ * PB7  - CAM_VSYNC                 (alternate TODO).
+ * PB8  - CAM_SCL                   (alternate 4).
+ * PB9  - CAM_SDA                   (alternate 4).
  * PB10 - CLK_IN                    (input pullup).
  * PB11 - PIN11                     (input pullup).
  * PB12 - PIN12                     (input pullup).
@@ -373,10 +373,10 @@
                                      PIN_MODE_ALTERNATE(GPIOB_SWO) |        \
                                      PIN_MODE_INPUT(GPIOB_PIN4) |           \
                                      PIN_MODE_INPUT(GPIOB_PIN5) |           \
-                                     PIN_MODE_ALTERNATE(GPIOB_SCL) |        \
-                                     PIN_MODE_INPUT(GPIOB_PIN7) |           \
-                                     PIN_MODE_INPUT(GPIOB_PIN8) |           \
-                                     PIN_MODE_ALTERNATE(GPIOB_SDA) |        \
+                                     PIN_MODE_ALTERNATE(GPIOB_CAM_B5) |     \
+                                     PIN_MODE_ALTERNATE(GPIOB_CAM_VSYNC) |  \
+                                     PIN_MODE_ALTERNATE(GPIOB_CAM_SCL) |    \
+                                     PIN_MODE_ALTERNATE(GPIOB_CAM_SDA) |    \
                                      PIN_MODE_INPUT(GPIOB_CLK_IN) |         \
                                      PIN_MODE_INPUT(GPIOB_PIN11) |          \
                                      PIN_MODE_INPUT(GPIOB_PIN12) |          \
@@ -389,10 +389,10 @@
                                      PIN_OTYPE_PUSHPULL(GPIOB_SWO) |        \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN4) |       \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN5) |       \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_SCL) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN7) |       \
-                                     PIN_OTYPE_PUSHPULL(GPIOB_PIN8) |       \
-                                     PIN_OTYPE_OPENDRAIN(GPIOB_SDA) |       \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_CAM_B5) |     \
+                                     PIN_OTYPE_PUSHPULL(GPIOB_CAM_VSYNC) |  \
+                                     PIN_OTYPE_OPENDRAIN(GPIOB_CAM_SCL) |   \
+                                     PIN_OTYPE_OPENDRAIN(GPIOB_CAM_SDA) |   \
                                      PIN_OTYPE_PUSHPULL(GPIOB_CLK_IN) |     \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN11) |      \
                                      PIN_OTYPE_PUSHPULL(GPIOB_PIN12) |      \
@@ -405,10 +405,10 @@
                                      PIN_OSPEED_100M(GPIOB_SWO) |           \
                                      PIN_OSPEED_100M(GPIOB_PIN4) |          \
                                      PIN_OSPEED_100M(GPIOB_PIN5) |          \
-                                     PIN_OSPEED_100M(GPIOB_SCL) |           \
-                                     PIN_OSPEED_100M(GPIOB_PIN7) |          \
-                                     PIN_OSPEED_100M(GPIOB_PIN8) |          \
-                                     PIN_OSPEED_100M(GPIOB_SDA) |           \
+                                     PIN_OSPEED_100M(GPIOB_CAM_B5) |        \
+                                     PIN_OSPEED_100M(GPIOB_CAM_VSYNC) |     \
+                                     PIN_OSPEED_100M(GPIOB_CAM_SCL) |       \
+                                     PIN_OSPEED_100M(GPIOB_CAM_SDA) |       \
                                      PIN_OSPEED_100M(GPIOB_CLK_IN) |        \
                                      PIN_OSPEED_100M(GPIOB_PIN11) |         \
                                      PIN_OSPEED_100M(GPIOB_PIN12) |         \
@@ -421,10 +421,10 @@
                                      PIN_PUPDR_FLOATING(GPIOB_SWO) |        \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN4) |         \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN5) |         \
-                                     PIN_PUPDR_FLOATING(GPIOB_SCL) |        \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN7) |         \
-                                     PIN_PUPDR_PULLUP(GPIOB_PIN8) |         \
-                                     PIN_PUPDR_FLOATING(GPIOB_SDA) |        \
+                                     PIN_PUPDR_PULLUP(GPIOB_CAM_B5) |       \
+                                     PIN_PUPDR_PULLUP(GPIOB_CAM_VSYNC) |    \
+                                     PIN_PUPDR_PULLUP(GPIOB_CAM_SCL) |      \
+                                     PIN_PUPDR_PULLUP(GPIOB_CAM_SDA) |      \
                                      PIN_PUPDR_PULLUP(GPIOB_CLK_IN) |       \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN11) |        \
                                      PIN_PUPDR_PULLUP(GPIOB_PIN12) |        \
@@ -437,10 +437,10 @@
                                      PIN_ODR_HIGH(GPIOB_SWO) |              \
                                      PIN_ODR_HIGH(GPIOB_PIN4) |             \
                                      PIN_ODR_HIGH(GPIOB_PIN5) |             \
-                                     PIN_ODR_HIGH(GPIOB_SCL) |              \
-                                     PIN_ODR_HIGH(GPIOB_PIN7) |             \
-                                     PIN_ODR_HIGH(GPIOB_PIN8) |             \
-                                     PIN_ODR_HIGH(GPIOB_SDA) |              \
+                                     PIN_ODR_HIGH(GPIOB_CAM_B5) |           \
+                                     PIN_ODR_HIGH(GPIOB_CAM_VSYNC) |        \
+                                     PIN_ODR_HIGH(GPIOB_CAM_SCL) |          \
+                                     PIN_ODR_HIGH(GPIOB_CAM_SDA) |          \
                                      PIN_ODR_HIGH(GPIOB_CLK_IN) |           \
                                      PIN_ODR_HIGH(GPIOB_PIN11) |            \
                                      PIN_ODR_HIGH(GPIOB_PIN12) |            \
@@ -453,10 +453,10 @@
                                      PIN_AFIO_AF(GPIOB_SWO, 0) |            \
                                      PIN_AFIO_AF(GPIOB_PIN4, 0) |           \
                                      PIN_AFIO_AF(GPIOB_PIN5, 0) |           \
-                                     PIN_AFIO_AF(GPIOB_SCL, 4) |            \
-                                     PIN_AFIO_AF(GPIOB_PIN7, 0))
-#define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_PIN8, 0) |           \
-                                     PIN_AFIO_AF(GPIOB_SDA, 4) |            \
+                                     PIN_AFIO_AF(GPIOB_CAM_B5, TODO) |      \
+                                     PIN_AFIO_AF(GPIOB_CAM_VSYNC, TODO))
+#define VAL_GPIOB_AFRH              (PIN_AFIO_AF(GPIOB_CAM_SCL, 4) |        \
+                                     PIN_AFIO_AF(GPIOB_CAM_SDA, 4) |        \
                                      PIN_AFIO_AF(GPIOB_CLK_IN, 0) |         \
                                      PIN_AFIO_AF(GPIOB_PIN11, 0) |          \
                                      PIN_AFIO_AF(GPIOB_PIN12, 0) |          \
@@ -473,8 +473,8 @@
  * PC3  - PDM_OUT                   (input pullup).
  * PC4  - PIN4                      (input pullup).
  * PC5  - PIN5                      (input pullup).
- * PC6  - PIN6                      (input pullup).
- * PC7  - MCLK                      (alternate 6).
+ * PC6  - CAM_B0                    (alternate TODO).
+ * PC7  - CAM_B1                    (alternate TODO). TODO from here
  * PC8  - PIN8                      (input pullup).
  * PC9  - PIN9                      (input pullup).
  * PC10 - SCLK                      (alternate 6).
