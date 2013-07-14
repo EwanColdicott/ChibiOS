@@ -216,20 +216,29 @@ void dcmi_lld_receive(DCMIDriver *dcmip, size_t n, bool_t oneShot,
   dmaStreamSetMemory0(dcmip->dmarx, rxbuf0);
   dmaStreamSetMemory1(dcmip->dmarx, rxbuf1);
   dmaStreamSetTransactionSize(dcmip->dmarx, n/4);
-  chprintf((BaseSequentialStream*)&SD3, "%d trans\r\n", n/4);
-  dmaMode = dcmip->rxdmamode | STM32_DMA_CR_MINC;
+  //dmaMode = dcmip->rxdmamode | STM32_DMA_CR_MINC;
+  dmaMode = STM32_DMA_CR_PL(2) |
+    STM32_DMA_CR_PSIZE_WORD |
+    STM32_DMA_CR_MSIZE_WORD |
+    STM32_DMA_CR_PBURST_SINGLE |
+    STM32_DMA_CR_MBURST_SINGLE |
+    STM32_DMA_CR_MINC |
+    STM32_DMA_CR_CHSEL(1);
   /* if second buffer not given, turn off double buffering */
-  dmaMode = (rxbuf1 == NULL) ? dmaMode & (~STM32_DMA_CR_DBM)
-                             : dmaMode | STM32_DMA_CR_DBM ;
+  if ( rxbuf1 == NULL ) {
+    dmaMode &= (~STM32_DMA_CR_DBM);
+  } else {
+    dmaMode |= STM32_DMA_CR_DBM;
+  }
   dmaStreamSetMode(dcmip->dmarx, dmaMode);
   dmaStreamSetFIFO(dcmip->dmarx,
-    STM32_DMA_FCR_FTH_FULL |
+    STM32_DMA_FCR_FTH_HALF |
     STM32_DMA_FCR_DMDIS );
   dmaStreamEnable(dcmip->dmarx);
 
   /* Now the DCMI */
-//  dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
-  dcmip->dcmi->CR = oneShot ? dcmip->dcmi->CR | STM32_DCMI_CR_CM
+  //dcmip->dcmi->IER |= STM32_DCMI_IER_FRAME_IE;
+  dcmip->dcmi->CR = (oneShot==TRUE) ? dcmip->dcmi->CR | STM32_DCMI_CR_CM
                             : dcmip->dcmi->CR & (~STM32_DCMI_CR_CM);
   dcmip->dcmi->CR |= STM32_DCMI_CR_ENABLE;
   dcmip->dcmi->CR |= STM32_DCMI_CR_CAPTURE;

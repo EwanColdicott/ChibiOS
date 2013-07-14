@@ -43,7 +43,7 @@ const uint32_t IMG_SIZE = IMG_HEIGHT*IMG_WIDTH*BPP;
 
 uint8_t imgBuf[IMG_SIZE];
 uint8_t* imgBuf0 = imgBuf;
-uint8_t* imgBuf1 = &imgBuf[IMG_SIZE/2];
+uint8_t* imgBuf1 = &(imgBuf[IMG_SIZE/2]);
 
 EventSource es1, es2;
 EventListener el1, el2;
@@ -53,18 +53,14 @@ static volatile uint32_t dmaTxferEndCbCount = 0;
 
 void frameEndCb(DCMIDriver* dcmip) {
    (void) dcmip;
-   chSysLockFromIsr();
    chEvtBroadcastI(&es2);
    frameEndCbCount++;
-   chSysUnlockFromIsr();
 }
 
 void dmaTxferEndCb(DCMIDriver* dcmip) {
    (void) dcmip;
-   chSysLockFromIsr();
    chEvtBroadcastI(&es1);
    dmaTxferEndCbCount++;
-   chSysUnlockFromIsr();
 }
 
 static const DCMIConfig dcmicfg = {
@@ -122,7 +118,7 @@ static msg_t Thread4(void *arg) {
     chEvtWaitOne(EVENT_MASK(1));
     chEvtWaitOne(EVENT_MASK(1)); //| EVENT_MASK(2));
     chThdSleepMilliseconds(1);
-    chprintf((BaseSequentialStream*)&SD3, "%u DMAs, %u Frames, dumping BMP:\n\r", dmaTxferEndCbCount, frameEndCbCount );
+    //chprintf((BaseSequentialStream*)&SD3, "%u DMAs, %u Frames, dumping BMP:\n\r", dmaTxferEndCbCount, frameEndCbCount );
     palSetPad(GPIOA, GPIOA_LED2);
     send16bppBmpImage( (BaseSequentialStream*)&SD3, (uint16_t*)imgBuf, IMG_WIDTH, IMG_HEIGHT );
     palClearPad(GPIOA, GPIOA_LED2);
