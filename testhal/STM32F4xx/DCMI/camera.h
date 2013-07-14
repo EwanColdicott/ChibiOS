@@ -59,6 +59,8 @@ extern "C" {
   void cameraInit(void);
     
   void cameraConfigure(void);
+
+  void cameraI2CTest(void);
 #ifdef __cplusplus
 }
 #endif
